@@ -2,6 +2,7 @@
 
 import json
 import requests
+import urllib
 
 
 class Qiita(object):
@@ -15,18 +16,26 @@ class Qiita(object):
     def access_token(self):
         return 'Bearer {}'.format(self._access_token)
 
-    def items_url(self, page, per_page):
+    def items_url(self, page, per_page, query):
         """
             post item list take url
 
             Args
                 page: int
                 per_page: int
+                query: str
 
             Returns:
                 url: str
         """
-        return (Qiita.url + '/items?page={}&per_page={}').format(page, per_page)
+        return (Qiita.url + '/items?page={}&per_page={}&{}').format(page, per_page, self._urlencode(query))
+
+    def _urlencode(self, query):
+        """
+            Args:
+                query: str
+        """
+        return urllib.parse.urlencode({'query': query})
 
     def comments_url(self, comment_id):
         """
@@ -53,12 +62,16 @@ class Qiita(object):
         header['Content-Type'] = 'application/json'
         return header
 
-    def get_items(self, page, per_page):
+    def get_items(self, page, per_page, query=""):
         """
+            Args:
+                page: int
+                per_page: int
+                query: str
             Returns:
                 items: list[dict]
         """
-        response = requests.get(self.items_url(page, per_page), headers=self.authorization_header())
+        response = requests.get(self.items_url(page, per_page, query), headers=self.authorization_header())
         parsed_json = json.loads(response.text)
         return [item for item in parsed_json]
 
