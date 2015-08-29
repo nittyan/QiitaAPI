@@ -16,19 +16,18 @@ class Qiita(object):
     def access_token(self):
         return 'Bearer {}'.format(self._access_token)
 
-    def items_url(self, page, per_page, query):
+    def myself_items_url(self, page, per_page):
         """
             post item list take url
 
             Args
                 page: int
                 per_page: int
-                query: str
 
             Returns:
                 url: str
         """
-        return (Qiita.url + '/items?page={}&per_page={}&{}').format(page, per_page, self._urlencode(query))
+        return (Qiita.url + '/authenticated_user/items?page={}&per_page={}').format(page, per_page)
 
     def _urlencode(self, query):
         """
@@ -62,16 +61,16 @@ class Qiita(object):
         header['Content-Type'] = 'application/json'
         return header
 
-    def get_items(self, page, per_page, query=""):
+    def get_items(self, page, per_page):
         """
             Args:
                 page: int
                 per_page: int
-                query: str
             Returns:
                 items: list[dict]
         """
-        response = requests.get(self.items_url(page, per_page, query), headers=self.authorization_header())
+        response = requests.get(self.myself_items_url(page, per_page), headers=self.authorization_header())
+        self._check_error(response)
         parsed_json = json.loads(response.text)
         return [item for item in parsed_json]
 
@@ -83,6 +82,7 @@ class Qiita(object):
                 comments: list[dict]
         """
         response = requests.get(self.comments_url(comment_id), headers=self.authorization_header())
+        self._check_error(response)
         parsed_json = json.loads(response.text)
         return [comment for comment in parsed_json]
 
@@ -101,6 +101,9 @@ class Qiita(object):
 
     def post_item(self, data):
         response = requests.post(self.post_item_url(), headers=self.json_request_header(), data=data)
+        self._check_error(response)
+
+    def _check_error(self, response):
         if response.status_code in Qiita.error_codes:
             raise Exception(response.text)
 
