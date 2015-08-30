@@ -51,6 +51,15 @@ class Qiita(object):
     def post_item_url(self):
         return Qiita.url + '/items'
 
+    def stocks_url(self, user_id):
+        return (Qiita.url + '/users/{}/stocks').format(user_id)
+
+    def authenticated_user_url(self):
+        return Qiita.url + '/authenticated_user'
+
+    def stocks_url(self, user_id, page, per_page):
+        return Qiita.url + '/users/{}/stocks?page={}&per_page={}'.format(user_id, page, per_page)
+
     def authorization_header(self):
         return {
           'Authorization': self.access_token()
@@ -98,6 +107,21 @@ class Qiita(object):
             comments.extend(self.get_comment(comment_id))
 
         return comments
+
+    def get_stocks(self, user_id):
+        response = requests.get(self.stocks_url(user_id), headers=self.json_request_header())
+        self._check_error(response)
+        return json.laods(response.text)
+
+    def get_authenticated_user(self):
+        response = requests.get(self.authenticated_user_url(), headers=self.json_request_header())
+        self._check_error(response)
+        return json.loads(response.text)
+
+    def get_stocks(self, user_id, page=1, per_page=1):
+        response = requests.get(self.stocks_url(user_id, page, per_page), headers=self.json_request_header())
+        self._check_error(response)
+        return json.loads(response.text)
 
     def post_item(self, data):
         response = requests.post(self.post_item_url(), headers=self.json_request_header(), data=data)
