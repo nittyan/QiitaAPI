@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import Mock, patch, MagicMock
 import requests
 
+import qiita
 from qiita import Qiita
 
 
@@ -17,13 +18,13 @@ class QiitaTest(unittest.TestCase):
         pass
 
     def test_my_self_items_url(self):
-        self.assertEquals('https://qiita.com/api/v2/authenticated_user/items?page=1&per_page=1', self.qiita.myself_items_url(1, 1))
+        self.assertEquals('https://qiita.com/api/v2/authenticated_user/items?page=1&per_page=1', qiita.myself_items_url(1, 1))
 
     def test_comments_url(self):
-        self.assertEqual('https://qiita.com/api/v2/items/random/comments', self.qiita.comments_url('random'))
+        self.assertEqual('https://qiita.com/api/v2/items/random/comments', qiita.comments_url('random'))
 
     def test_post_item_url(self):
-        self.assertEqual('https://qiita.com/api/v2/items', self.qiita.post_item_url())
+        self.assertEqual('https://qiita.com/api/v2/items', qiita.post_item_url())
 
     def test_access_token(self):
         self.assertEqual('Bearer ' + self.access_token, self.qiita.access_token())
