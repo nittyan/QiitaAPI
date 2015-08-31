@@ -48,6 +48,9 @@ class Qiita(object):
         """
         return (Qiita.url + '/items/{}/comments').format(comment_id)
 
+    def tags_items_url(self, tag_id, page, per_page):
+        return Qiita.url + '/tags/{}/items?page={}&per_page={}'.format(tag_id, page, per_page)
+
     def post_item_url(self):
         return Qiita.url + '/items'
 
@@ -70,7 +73,13 @@ class Qiita(object):
         header['Content-Type'] = 'application/json'
         return header
 
-    def get_items(self, page, per_page):
+    def get_request(self, url, header):
+        response = requests.get(url, headers=header)
+        self._check_error(response)
+        parsed_json = json.loads(response.text)
+        return [item for item in parsed_json]
+
+    def get_items(self, page=1, per_page=1):
         """
             Args:
                 page: int
@@ -78,10 +87,7 @@ class Qiita(object):
             Returns:
                 items: list[dict]
         """
-        response = requests.get(self.myself_items_url(page, per_page), headers=self.authorization_header())
-        self._check_error(response)
-        parsed_json = json.loads(response.text)
-        return [item for item in parsed_json]
+        return self.get_request(self.myself_items_url(page, per_page), self.authorization_header())
 
     def get_comment(self, comment_id):
         """
@@ -90,10 +96,7 @@ class Qiita(object):
             Returns:
                 comments: list[dict]
         """
-        response = requests.get(self.comments_url(comment_id), headers=self.authorization_header())
-        self._check_error(response)
-        parsed_json = json.loads(response.text)
-        return [comment for comment in parsed_json]
+        return self.get_request(self.comments_url(comment_id), self.authorization_header())
 
     def get_comments(self, comment_ids):
         """
@@ -108,20 +111,17 @@ class Qiita(object):
 
         return comments
 
+    def get_tags_items(self, tag_id, page=1, per_page=1):
+        return self.get_request(self.tags_items_url(tag_id, page, per_page), self.json_request_header())
+
     def get_stocks(self, user_id):
-        response = requests.get(self.stocks_url(user_id), headers=self.json_request_header())
-        self._check_error(response)
-        return json.laods(response.text)
+        return self.get_request(self.stocks_url(user_id), self.authorization_header())
 
     def get_authenticated_user(self):
-        response = requests.get(self.authenticated_user_url(), headers=self.json_request_header())
-        self._check_error(response)
-        return json.loads(response.text)
+        return self.get_request(self.authenticated_user_url(), self.authorization_header())
 
     def get_stocks(self, user_id, page=1, per_page=1):
-        response = requests.get(self.stocks_url(user_id, page, per_page), headers=self.json_request_header())
-        self._check_error(response)
-        return json.loads(response.text)
+        return self.get_request(self.stocks_url(user_id, page, per_page), self.authorization_header())
 
     def post_item(self, data):
         response = requests.post(self.post_item_url(), headers=self.json_request_header(), data=data)
