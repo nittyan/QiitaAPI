@@ -20,7 +20,7 @@ def myself_items_url(page, per_page):
         Returns:
             url: str
     """
-    return (QIITA_URL + '/authenticated_user/items?page={}&per_page={}').format(page, per_page)
+    return QIITA_URL + '/authenticated_user/items?page={}&per_page={}'.format(page, per_page)
 
 
 def comments_url(comment_id):
@@ -33,7 +33,7 @@ def comments_url(comment_id):
         Returns:
           url: str
     """
-    return (QIITA_URL + '/items/{}/comments').format(comment_id)
+    return QIITA_URL + '/items/{}/comments'.format(comment_id)
 
 
 def tags_items_url(tag_id, page, per_page):
