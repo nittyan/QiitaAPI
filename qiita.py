@@ -2,12 +2,61 @@
 
 import json
 import requests
+import urllib
+
+
+QIITA_URL = 'https://qiita.com/api/v2'
+ERROR_CODES = [400, 401, 403, 404, 500]
+
+
+def myself_items_url(page, per_page):
+    """
+        post item list take url
+
+        Args
+            page: int
+            per_page: int
+
+        Returns:
+            url: str
+    """
+    return QIITA_URL + '/authenticated_user/items?page={}&per_page={}'.format(page, per_page)
+
+
+def comments_url(comment_id):
+    """
+        post item related comment take url
+
+        Args
+            comment_id: int
+
+        Returns:
+          url: str
+    """
+    return QIITA_URL + '/items/{}/comments'.format(comment_id)
+
+
+def tags_items_url(tag_id, page, per_page):
+    return QIITA_URL + '/tags/{}/items?page={}&per_page={}'.format(tag_id, page, per_page)
+
+
+def post_item_url():
+    return QIITA_URL + '/items'
+
+
+def stocks_url(user_id):
+    return QIITA_URL + '/users/{}/stocks'.format(user_id)
+
+
+def authenticated_user_url():
+    return QIITA_URL + '/authenticated_user'
+
+
+def stocks_url(user_id, page, per_page):
+    return QIITA_URL + '/users/{}/stocks?page={}&per_page={}'.format(user_id, page, per_page)
 
 
 class Qiita(object):
-
-    error_codes = [400, 401, 403, 404, 500]
-    url = 'https://qiita.com/api/v2'
 
     def __init__(self, access_token):
         self._access_token = access_token
@@ -15,33 +64,12 @@ class Qiita(object):
     def access_token(self):
         return 'Bearer {}'.format(self._access_token)
 
-    def items_url(self, page, per_page):
+    def _urlencode(self, query):
         """
-            post item list take url
-
-            Args
-                page: int
-                per_page: int
-
-            Returns:
-                url: str
+            Args:
+                query: str
         """
-        return (Qiita.url + '/items?page={}&per_page={}').format(page, per_page)
-
-    def comments_url(self, comment_id):
-        """
-            post item related comment take url
-
-            Args
-                comment_id: int
-
-            Returns:
-              url: str
-        """
-        return (Qiita.url + '/items/{}/comments').format(comment_id)
-
-    def post_item_url(self):
-        return Qiita.url + '/items'
+        return urllib.parse.urlencode({'query': query})
 
     def authorization_header(self):
         return {
@@ -53,14 +81,21 @@ class Qiita(object):
         header['Content-Type'] = 'application/json'
         return header
 
-    def get_items(self, page, per_page):
+    def get_request(self, url, header):
+        response = requests.get(url, headers=header)
+        self._check_error(response)
+        parsed_json = json.loads(response.text)
+        return [item for item in parsed_json]
+
+    def get_items(self, page=1, per_page=1):
         """
+            Args:
+                page: int
+                per_page: int
             Returns:
                 items: list[dict]
         """
-        response = requests.get(self.items_url(page, per_page), headers=self.authorization_header())
-        parsed_json = json.loads(response.text)
-        return [item for item in parsed_json]
+        return self.get_request(myself_items_url(page, per_page), self.authorization_header())
 
     def get_comment(self, comment_id):
         """
@@ -69,9 +104,7 @@ class Qiita(object):
             Returns:
                 comments: list[dict]
         """
-        response = requests.get(self.comments_url(comment_id), headers=self.authorization_header())
-        parsed_json = json.loads(response.text)
-        return [comment for comment in parsed_json]
+        return self.get_request(comments_url(comment_id), self.authorization_header())
 
     def get_comments(self, comment_ids):
         """
@@ -86,8 +119,23 @@ class Qiita(object):
 
         return comments
 
+    def get_tags_items(self, tag_id, page=1, per_page=1):
+        return self.get_request(tags_items_url(tag_id, page, per_page), self.json_request_header())
+
+    def get_stocks(self, user_id):
+        return self.get_request(stocks_url(user_id), self.authorization_header())
+
+    def get_authenticated_user(self):
+        return self.get_request(authenticated_user_url(), self.authorization_header())
+
+    def get_stocks(self, user_id, page=1, per_page=1):
+        return self.get_request(stocks_url(user_id, page, per_page), self.authorization_header())
+
     def post_item(self, data):
-        response = requests.post(self.post_item_url(), headers=self.json_request_header(), data=data)
-        if response.status_code in Qiita.error_codes:
+        response = requests.post(post_item_url(), headers=self.json_request_header(), data=data)
+        self._check_error(response)
+
+    def _check_error(self, response):
+        if response.status_code in ERROR_CODES:
             raise Exception(response.text)
 
